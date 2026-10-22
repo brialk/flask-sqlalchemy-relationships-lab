@@ -15,30 +15,73 @@ migrate = Migrate(app, db)
 db.init_app(app)
 
 # TODO: add functionality to all routes
+def bio_text_for(speaker):
+    """Return the speaker's bio text, or a default message if they have none."""
+    return speaker.bio.bio_text if speaker.bio else "No bio available"
 
 @app.route('/events')
 def get_events():
-    pass
+    events = Event.query.all()
+    body = [
+        {'id': event.id, 'name': event.name, 'location': event.location}
+        for event in events
+    ]
+    return jsonify(body), 200
 
 
 @app.route('/events/<int:id>/sessions')
 def get_event_sessions(id):
-    pass
+    event = db.session.get(Event, id)
+    if not event:
+        return jsonify({'error': 'Event not found'}), 404
+
+    body = [
+        {
+            'id': session.id,
+            'title': session.title,
+            'start_time': session.start_time.isoformat() if session.start_time else None,
+        }
+        for session in event.sessions
+    ]
+    return jsonify(body), 200
 
 
 @app.route('/speakers')
 def get_speakers():
-    pass
+    speakers = Speaker.query.all()
+    body = [{'id': speaker.id, 'name': speaker.name} for speaker in speakers]
+    return jsonify(body), 200
 
 
 @app.route('/speakers/<int:id>')
 def get_speaker(id):
-    pass
+    speaker = db.session.get(Speaker, id)
+    if not speaker:
+        return jsonify({'error': 'Speaker not found'}), 404
+
+    body = {
+        'id': speaker.id,
+        'name': speaker.name,
+        'bio_text': bio_text_for(speaker),
+    }
+    return jsonify(body), 200
 
 
 @app.route('/sessions/<int:id>/speakers')
 def get_session_speakers(id):
-    pass
+    session = db.session.get(Session, id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    body = [
+        {
+            'id': speaker.id,
+            'name': speaker.name,
+            'bio_text': bio_text_for(speaker),
+        }
+        for speaker in session.speakers
+    ]
+    return jsonify(body), 200
 
 
 if __name__ == '__main__':
